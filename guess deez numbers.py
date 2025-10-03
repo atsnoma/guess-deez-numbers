@@ -35,7 +35,7 @@ def checkupTokens(level, skipPassTokens, roundOffTokens):
         skipPassTokens = 3
         print("Added 3 Skip Tokens")
         print("Added 3 Round Tokens")
-        return roundOffTokens, skipPassTokens
+        return skipPassTokens, roundOffTokens
     else:
         while True:
                 skipInput = input("Would you like any more Skip Tokens? The game will get harder if you do! (Y/N)")
@@ -68,10 +68,11 @@ def checkupUpgrades(level, directionDetection):
         return directionDetection
     elif level == 5:
         directionDetection += 1
-        "You now have a better sense numbers!"
+        print("You now have a better sense for numbers!")
+        return directionDetection
     else:
         while True:
-            upgradeInput = ("Your Number Sense is currently level " + directionDetection + ". Would you like to upgrade it? (Y/N)")
+            upgradeInput = ("Your Number Sense is currently level ", directionDetection, ". Would you like to upgrade it? (Y/N)")
             if upgradeInput == "Y" :
                 directionDetection += 1
                 print("Your number sense has increased.")
@@ -100,7 +101,7 @@ def generateNumber(level):
     return random.randrange(minimumNumber, maximumNumber)
 
 #This function handles events during a correct guess.
-def correctGuess(targetNumber, totScore):
+def correctGuess(level, targetNumber, totScore):
     print("That is correct! The number was", targetNumber, "!")
     totScore += 1+level
     return totScore
@@ -134,6 +135,7 @@ def hintNumber(targetNumber, directionDetection):
         lastNumber = targetNumber % 10
         print("The number ends in a %i!" % (lastNumber))
     if directionDetection > 2:
+        factorNumber = None
         for i in range (2,9):
             divisibilityNumber = targetNumber % i
             if divisibilityNumber == 0:
@@ -166,7 +168,7 @@ def nextNumber(level, playerHealth, totScore, skipPassTokens, roundOffTokens, di
             if playerGuess.lower() == "skip":
                 if skipPassTokens > 0:
                     skipPassTokens -= 1
-                    totScore = correctGuess(targetNumber, totScore)
+                    totScore = correctGuess(level, targetNumber, totScore)
                     return playerHealth, totScore, skipPassTokens, roundOffTokens
                 else:
                     print("No skip tokens remaining!")
@@ -181,7 +183,7 @@ def nextNumber(level, playerHealth, totScore, skipPassTokens, roundOffTokens, di
                     continue
             try:
                 if int(playerGuess) == targetNumber:
-                    totScore = correctGuess(targetNumber, totScore)
+                    totScore = correctGuess(level, targetNumber, totScore)
                     return playerHealth, totScore, skipPassTokens, roundOffTokens
                 learnNumber(targetNumber, directionDetection)
                 (playerHealth, totScore) = incorrectGuess(playerHealth, totScore)
@@ -198,12 +200,11 @@ def gameOver(totScore):
 
 #This function handles victory.
 def victoryCheck(totScore):
-    if totScore > 99
-    print("You have defended the people! You are a true hero.")
-    print("Final Score: %i" % (totScore))
-    input("Press Enter to exit the game as a winner!")
+    if totScore > 99:
+        print("You have defended the people! You are a true hero.")
+        print("Final Score: %i" % (totScore))
+        input("Press Enter to exit the game as a winner!")
     
-
 #This starts the first round
 print("The town of Marshall's Mound is under attack! Only you, a math wizard, can prevent complete calamity.")
 print("Your spell-slinging is best represented by the challenge of guessing a number between 0 and 5, but it will get harder over time!")
