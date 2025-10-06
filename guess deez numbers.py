@@ -1,5 +1,6 @@
 import random
 import math
+import sys
 '''
 
 This is a number guessing roguelike
@@ -14,20 +15,23 @@ level = 1
 
 #This controls level changes and reports resources to the player between rounds.
 def levelManagement(totScore, level, playerHealth, skipPassTokens, roundOffTokens, directionDetection):
-    victoryCheck(totScore)
-    level += 1
-    playerHealth += 1+level
-    print("You have %i health, as well as %i Skip Tokens and %i Rounding Tokens. Your Detection Level is at %i." % (playerHealth, skipPassTokens, roundOffTokens, directionDetection))
-    skipPassTokens, roundOffTokens = checkupTokens(level, skipPassTokens, roundOffTokens)
-    directionDetection = checkupUpgrades(level,directionDetection)
-    input("Press Any Key to Continue...")
-    print("The highest possible number for this round is %i!" % (3*level + 8))
-    startGame(level, playerHealth, totScore, skipPassTokens, roundOffTokens, directionDetection)
+    wincondition = victoryCheck(totScore)
+    if wincondition == True:
+        sys.exit
+    else:
+        level += 1
+        playerHealth += 1+level
+        print("You have %i health, as well as %i Skip Tokens and %i Rounding Tokens. Your Detection Level is at %i." % (playerHealth, skipPassTokens, roundOffTokens, directionDetection))
+        level, skipPassTokens, roundOffTokens = checkupTokens(level, skipPassTokens, roundOffTokens)
+        directionDetection = checkupUpgrades(level,directionDetection)
+        input("Press Enter to Continue...")
+        print("The highest possible number for this round is %i!" % (4*level + 1))
+        startGame(level, playerHealth, totScore, skipPassTokens, roundOffTokens, directionDetection)
 
 #This handles restocking of tokens
 def checkupTokens(level, skipPassTokens, roundOffTokens):
     if level < 4:
-        return skipPassTokens, roundOffTokens
+        return level, skipPassTokens, roundOffTokens
     elif level == 4:
         print("You now have access to Round off and Skip Tokens!")
         print("Type \'Skip\' or \'Round\' to use them.")
@@ -35,7 +39,7 @@ def checkupTokens(level, skipPassTokens, roundOffTokens):
         skipPassTokens = 3
         print("Added 3 Skip Tokens")
         print("Added 3 Round Tokens")
-        return skipPassTokens, roundOffTokens
+        return level, skipPassTokens, roundOffTokens
     else:
         while True:
                 skipInput = input("Would you like any more Skip Tokens? The game will get harder if you do! (Y/N)")
@@ -60,29 +64,28 @@ def checkupTokens(level, skipPassTokens, roundOffTokens):
                 break
             else:
                 print("Please type either \'Y\' or \'N\'.")
-        return skipPassTokens, roundOffTokens
+        return level, skipPassTokens, roundOffTokens
 
 #This handles the upgrading of Math Sense
 def checkupUpgrades(level, directionDetection):
-    if level < 5:
+    if level < 3:
         return directionDetection
-    elif level == 5:
+    elif level == 3:
         directionDetection += 1
-        print("You now have a better sense for numbers!")
+        print("You now have a better sense for numbers! Detection increased by 1.")
         return directionDetection
     else:
         while True:
-            upgradeInput = ("Your Number Sense is currently level ", directionDetection, ". Would you like to upgrade it? (Y/N)")
-            if upgradeInput == "Y" :
+            upgradeInput = input("Your Number Sense is currently level %i. Would you like to upgrade it? (Y/N)" % (directionDetection))
+            if upgradeInput.lower() == "y" :
                 directionDetection += 1
-                print("Your number sense has increased.")
+                print("Your Number Sense has increased.")
                 break
-            elif upgradeInput == "N" :
+            elif upgradeInput.lower() == "n" :
                 break
             else:
                 print("Please type either \'Y\' or \'N\'.")
-        print ("No tokens today.")
-        return directionDetection
+    return directionDetection
 
 #This starts the next round of the game.
 def startGame(level, playerHealth, totScore, skipPassTokens, roundOffTokens, directionDetection):
@@ -107,8 +110,10 @@ def correctGuess(level, targetNumber, totScore):
     return totScore
 
 #This function handles events during an incorrect guess.
-def incorrectGuess(playerHealth, totScore):
+def incorrectGuess(playerHealth, totScore, directionDetection, playerGuess, targetNumber):
     playerHealth -= 1
+    if directionDetection > 0:
+        learnNumber(playerGuess, targetNumber, directionDetection)
     if playerHealth == 0:
         gameOver(totScore)
         return playerHealth, totScore
@@ -116,25 +121,27 @@ def incorrectGuess(playerHealth, totScore):
         print("Wrong! Lives remaining: ", playerHealth)
         totScore -= 1
         return playerHealth, totScore
-    if directionDetection > 1:
-        learningNumber()
 
 #This function handles hints after WRONG guesses
-def learnNumber(targetNumber, directionDetection):
+def learnNumber(playerGuess, targetNumber, directionDetection):
+    if directionDetection > 0:
+        try:
+            if int(playerGuess) > targetNumber:
+                print("The number is lesser than your guess!")
+            else:
+                print("The number is greater than your guess!")
+        except:
+            pass
     if directionDetection > 1:
-        predictNumber = targetNumber - random.randrange(1, 10)
-        print("The number is greater than %i!" % (predictNumber))
-    if directionDetection > 3:
-        tensNumber = math.floor(targetNumber/10)
-        print("The number is between %i and %i!" % (tensNumber, tensNumber+10))
+            predictNumber = targetNumber - random.randrange(1, 10)
+            print("The number is greater than %i!" % (predictNumber))
+    if directionDetection > 2:
+            predictNumber2 = targetNumber + random.randrange(1, 10)
+            print("The number is lesser than %i!" % (predictNumber2))
     return
-
 #This function handles hints before any guesses.
 def hintNumber(targetNumber, directionDetection):
     if directionDetection > 0:
-        lastNumber = targetNumber % 10
-        print("The number ends in a %i!" % (lastNumber))
-    if directionDetection > 2:
         factorNumber = None
         for i in range (2,9):
             divisibilityNumber = targetNumber % i
@@ -143,11 +150,14 @@ def hintNumber(targetNumber, directionDetection):
             else:
                 pass
         if factorNumber != None:
-            print("The number is divisible by " + factorNumber + "!")
-            return
+            print("The number is divisible by ", factorNumber, "!")
         else:
             print("The number is not divisble by numbers 2 through 9!")
-            return
+    if directionDetection > 2:
+        lastNumber = targetNumber % 10
+        print("The number ends in a %i!" % (lastNumber))
+    return
+        
 
 #This function handles the use of Round Tokens
 def useRoundToken(targetNumber):
@@ -185,12 +195,12 @@ def nextNumber(level, playerHealth, totScore, skipPassTokens, roundOffTokens, di
                 if int(playerGuess) == targetNumber:
                     totScore = correctGuess(level, targetNumber, totScore)
                     return playerHealth, totScore, skipPassTokens, roundOffTokens
-                learnNumber(targetNumber, directionDetection)
-                (playerHealth, totScore) = incorrectGuess(playerHealth, totScore)
-                if playerHealth == 0:
+                elif playerHealth == 0:
                     return playerHealth, totScore, skipPassTokens, roundOffTokens
+                else:
+                    (playerHealth, totScore) = incorrectGuess(playerHealth, totScore, directionDetection, playerGuess, targetNumber)
             except:
-                (playerHealth, totScore) = incorrectGuess(playerHealth, totScore)
+                (playerHealth, totScore) = incorrectGuess(playerHealth, totScore, directionDetection, playerGuess, targetNumber)
 
 #This function handles a game over.
 def gameOver(totScore):
@@ -200,10 +210,15 @@ def gameOver(totScore):
 
 #This function handles victory.
 def victoryCheck(totScore):
-    if totScore > 99:
+    if totScore > 150:
         print("You have defended the people! You are a true hero.")
         print("Final Score: %i" % (totScore))
         input("Press Enter to exit the game as a winner!")
+        wincondition = True
+        return wincondition
+    else:
+        wincondition = False
+        return wincondition
     
 #This starts the first round
 print("The town of Marshall's Mound is under attack! Only you, a math wizard, can prevent complete calamity.")
